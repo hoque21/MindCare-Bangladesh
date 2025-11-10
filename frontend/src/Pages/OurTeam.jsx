@@ -8,8 +8,8 @@ import { FaUserMd, FaBrain, FaHandsHelping, FaChild } from "react-icons/fa";
 // Team images
 import drRahman from "../assets/Rifat.jpg";
 import drAmir from "../assets/amir.jpg";
-import mrKarim from "../assets/sumon.jpg";
-import msFarah from "../assets/siraj.jpg";
+import mrKarim from "../assets/Sumon.jpg";
+import msFarah from "../assets/Siraj.jpg";
 
 const OurTeam = () => {
   const [selectedSection, setSelectedSection] = useState("");

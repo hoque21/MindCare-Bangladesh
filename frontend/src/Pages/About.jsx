@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import team1 from "../assets/Rifat.jpg";
 import team2 from "../assets/amir.jpg";
-import team3 from "../assets/sumon.jpg";
-import team4 from "../assets/siraj.jpg";
+import team3 from "../assets/Sumon.jpg";
+import team4 from "../assets/Siraj.jpg";
 import { FaHeart, FaShieldAlt, FaStar } from "react-icons/fa";
 
 const About = () => {

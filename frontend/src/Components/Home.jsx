@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import CountUp from "react-countup";
 // Assets
-import heroImage from "../assets/hero.jpg";
+import heroImage from "../assets/Hero.jpg";
 import testimonial1 from "../assets/Rifat.jpg";
 import testimonial2 from "../assets/amir.jpg";
 import chatLogo from "../assets/Logo.jpg"; // AI Chatbot logo
