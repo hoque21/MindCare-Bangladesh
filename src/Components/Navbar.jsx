@@ -1,11 +1,42 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { useAuth } from "../contexts/AuthContext";
 import logo from "../assets/Logo.jpg";
+
+const MySwal = withReactContent(Swal);
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
+
+  const handleLogout = () => {
+    MySwal.fire({
+      title: "Logout",
+      text: "Are you sure you want to logout?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#14B8A6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, logout",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        logout();
+        navigate("/");
+        MySwal.fire({
+          title: "Logged Out",
+          text: "You have been successfully logged out.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
+  };
 
   const menuLinks = [
     { name: "Home", to: "/" },
@@ -16,7 +47,6 @@ const Navbar = () => {
     { name: "Research", to: "/research" },
   ];
 
-  // Navbar animation variants
   const navVariants = {
     hidden: { y: -80, opacity: 0 },
     visible: {
@@ -89,7 +119,7 @@ const Navbar = () => {
                   className={`relative group transition ${
                     location.pathname === link.to
                       ? "text-yellow-400 font-semibold"
-                      : ""
+                      : "hover:text-yellow-400"
                   }`}
                 >
                   {link.name}
@@ -98,31 +128,49 @@ const Navbar = () => {
               </motion.div>
             ))}
 
-            {/* Login/Register Buttons */}
+            {/* Auth Buttons */}
             <motion.div
               initial={{ opacity: 0, x: 40 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
               className="flex items-center space-x-4 ml-6"
             >
-              <Link to="/login">
-                <motion.button
-                  whileHover={{ scale: 1.07 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-300 text-teal-900 px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-yellow-400/30"
-                >
-                  Login
-                </motion.button>
-              </Link>
-              <Link to="/register">
-                <motion.button
-                  whileHover={{ scale: 1.07 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="border-2 border-yellow-400 text-yellow-400 px-4 py-2 rounded-full font-semibold shadow-md hover:bg-yellow-400 hover:text-teal-900 transition"
-                >
-                  Register
-                </motion.button>
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <span className="text-yellow-300 font-medium text-sm">
+                    👋 Hi, {user?.name?.split(" ")[0]}
+                  </span>
+                  <motion.button
+                    onClick={handleLogout}
+                    whileHover={{ scale: 1.07 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg transition"
+                  >
+                    Logout
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login">
+                    <motion.button
+                      whileHover={{ scale: 1.07 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="bg-gradient-to-r from-yellow-400 to-yellow-300 text-teal-900 px-4 py-2 rounded-full font-semibold shadow-lg hover:shadow-yellow-400/30"
+                    >
+                      Login
+                    </motion.button>
+                  </Link>
+                  <Link to="/register">
+                    <motion.button
+                      whileHover={{ scale: 1.07 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="border-2 border-yellow-400 text-yellow-400 px-4 py-2 rounded-full font-semibold shadow-md hover:bg-yellow-400 hover:text-teal-900 transition"
+                    >
+                      Register
+                    </motion.button>
+                  </Link>
+                </>
+              )}
             </motion.div>
           </div>
 
@@ -137,7 +185,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Animation */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -170,26 +218,47 @@ const Navbar = () => {
               </motion.div>
             ))}
 
-            {/* Mobile Login/Register */}
-            <div className="flex flex-col space-y-2 mt-4">
-              <Link to="/login" onClick={() => setIsOpen(false)}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-300 text-teal-900 px-4 py-2 rounded-full font-semibold shadow-lg"
-                >
-                  Login
-                </motion.button>
-              </Link>
-              <Link to="/register" onClick={() => setIsOpen(false)}>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="border-2 border-yellow-400 text-yellow-400 px-4 py-2 rounded-full font-semibold shadow-md"
-                >
-                  Register
-                </motion.button>
-              </Link>
+            {/* Mobile Auth Buttons */}
+            <div className="flex flex-col space-y-2 mt-4 border-t border-teal-600 pt-4">
+              {isAuthenticated ? (
+                <>
+                  <p className="text-yellow-300 font-medium text-sm px-1">
+                    👋 Hi, {user?.name}
+                  </p>
+                  <motion.button
+                    onClick={() => {
+                      setIsOpen(false);
+                      handleLogout();
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-semibold shadow-lg transition w-full"
+                  >
+                    Logout
+                  </motion.button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full bg-gradient-to-r from-yellow-400 to-yellow-300 text-teal-900 px-4 py-2 rounded-full font-semibold shadow-lg"
+                    >
+                      Login
+                    </motion.button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsOpen(false)}>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="w-full border-2 border-yellow-400 text-yellow-400 px-4 py-2 rounded-full font-semibold shadow-md hover:bg-yellow-400 hover:text-teal-900 transition"
+                    >
+                      Register
+                    </motion.button>
+                  </Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}

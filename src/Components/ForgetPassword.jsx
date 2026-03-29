@@ -1,130 +1,70 @@
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import heroImage from "../assets/Hero.jpg";
+import { authAPI } from "../services/api";
 
 const MySwal = withReactContent(Swal);
 
 export default function ForgetPassword() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Email, 2: OTP, 3: New Password
-  const [emailOrMobile, setEmailOrMobile] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [mobile, setMobile] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const handleEmailSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    await MySwal.fire({
-      title: "OTP Sent! 📩",
-      html: `<p style="color:#065f46">An OTP has been sent to <b>${emailOrMobile}</b></p>`,
-      icon: "success",
-      iconColor: "#14B8A6",
-      background: "#f0fdfa",
-      confirmButtonColor: "#14B8A6",
-      showClass: {
-        popup: "animate__animated animate__fadeInDown",
-      },
-      hideClass: {
-        popup: "animate__animated animate__fadeOutUp",
-      },
-      timer: 2500,
-      timerProgressBar: true,
-    });
-    setStep(2);
-  };
 
-  const handleOtpChange = (index, value) => {
-    if (/^\d*$/.test(value)) {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-      if (value && index < 3) document.getElementById(`otp-${index + 1}`).focus();
-    }
-  };
-
-  const handleOtpSubmit = async (e) => {
-    e.preventDefault();
-    if (otp.some((d) => d === "")) {
-      await MySwal.fire({
-        title: "Incomplete OTP ❗",
-        html: `<p style="color:#b45309">Please enter all 4 digits of your OTP.</p>`,
+    if (!mobile.trim()) {
+      MySwal.fire({
+        title: "Required",
+        text: "Please enter your registered mobile number.",
         icon: "warning",
-        iconColor: "#f59e0b",
-        background: "#fef3c7",
-        confirmButtonColor: "#f59e0b",
-        showClass: {
-          popup: "animate__animated animate__shakeX",
-        },
-        hideClass: {
-          popup: "animate__animated animate__fadeOut",
-        },
+        confirmButtonColor: "#14B8A6",
       });
       return;
     }
-    await MySwal.fire({
-      title: "OTP Verified ✅",
-      html: `<p style="color:#065f46">Your OTP has been verified successfully!</p>`,
-      icon: "success",
-      iconColor: "#14B8A6",
-      background: "#f0fdfa",
-      showConfirmButton: false,
-      timer: 1800,
-      timerProgressBar: true,
-      showClass: {
-        popup: "animate__animated animate__fadeInDown",
-      },
-      hideClass: {
-        popup: "animate__animated animate__fadeOutUp",
-      },
-    });
-    setStep(3);
-  };
 
-  const handleNewPasswordSubmit = async (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      await MySwal.fire({
-        title: "Passwords Do Not Match ⚠️",
-        html: `<p style="color:#991b1b">Please re-enter your password correctly.</p>`,
-        icon: "error",
-        iconColor: "#ef4444",
-        background: "#fee2e2",
-        confirmButtonColor: "#ef4444",
-        showClass: {
-          popup: "animate__animated animate__headShake",
-        },
-        hideClass: {
-          popup: "animate__animated animate__fadeOut",
-        },
+    setLoading(true);
+    try {
+      const response = await authAPI.forgotPassword({ mobile });
+
+      setSubmitted(true);
+
+      MySwal.fire({
+        title: "Request Sent! 📩",
+        html: `<p style="color:#065f46">${
+          response?.data?.message ||
+          "If an account is associated with that number and has a registered email, a password reset link has been sent."
+        }</p>`,
+        icon: "success",
+        iconColor: "#14B8A6",
+        background: "#f0fdfa",
+        confirmButtonColor: "#14B8A6",
+        confirmButtonText: "Go to Login",
+      }).then(() => {
+        navigate("/login");
       });
-      return;
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.";
+
+      MySwal.fire({
+        title: "Error ❌",
+        text: message,
+        icon: "error",
+        confirmButtonColor: "#14B8A6",
+      });
+    } finally {
+      setLoading(false);
     }
-    await MySwal.fire({
-      title: "Password Reset Successful 🎉",
-      html: `<p style="color:#065f46">Your password has been updated successfully. Please login again.</p>`,
-      icon: "success",
-      iconColor: "#14B8A6",
-      background: "#f0fdfa",
-      confirmButtonText: "Go to Login",
-      confirmButtonColor: "#14B8A6",
-      showClass: {
-        popup: "animate__animated animate__zoomIn",
-      },
-      hideClass: {
-        popup: "animate__animated animate__zoomOut",
-      },
-    });
-    navigate("/login");
   };
 
   return (
@@ -133,10 +73,10 @@ export default function ForgetPassword() {
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${heroImage})` }}
-      ></div>
+      />
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-900/70 via-teal-700/60 to-teal-500/50 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-900/70 via-teal-700/60 to-teal-500/50 backdrop-blur-sm" />
 
       {/* Floating Motion Orbs */}
       <motion.div
@@ -150,142 +90,121 @@ export default function ForgetPassword() {
         transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* Glassmorphic Card */}
+      {/* Card */}
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="relative z-10 w-full max-w-md bg-white/60 backdrop-blur-2xl shadow-2xl rounded-2xl p-8 border border-white/40"
       >
-        <AnimatePresence mode="wait">
-          {/* Step 1: Email/Mobile */}
-          {step === 1 && (
-            <motion.div
-              key="step1"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="bg-teal-100 rounded-full p-4 shadow-inner">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-10 w-10 text-teal-700"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
             >
-              <h2 className="text-3xl font-extrabold text-center text-teal-900 mb-4">
-                Forgot Password 🔐
-              </h2>
-              <p className="text-gray-700 mb-6 text-center">
-                Enter your registered <b>email</b> or <b>mobile number</b> to receive an OTP.
-              </p>
-              <form onSubmit={handleEmailSubmit} className="space-y-5">
-                <input
-                  type="text"
-                  value={emailOrMobile}
-                  onChange={(e) => setEmailOrMobile(e.target.value)}
-                  required
-                  placeholder="Enter your email or mobile"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
-                />
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-teal-900 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition"
-                >
-                  Send OTP
-                </motion.button>
-              </form>
-            </motion.div>
-          )}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-5 0-8 2.5-8 4v1h16v-1c0-1.5-3-4-8-4z"
+              />
+            </svg>
+          </div>
+        </div>
 
-          {/* Step 2: OTP Verification */}
-          {step === 2 && (
-            <motion.div
-              key="step2"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
-            >
-              <h2 className="text-3xl font-extrabold text-center text-teal-900 mb-4">
-                Verify OTP 🔢
-              </h2>
-              <p className="text-gray-700 mb-6 text-center">
-                Enter the 4-digit OTP sent to your email or mobile.
-              </p>
-              <form className="flex justify-between space-x-3">
-                {otp.map((digit, idx) => (
-                  <motion.input
-                    key={idx}
-                    id={`otp-${idx}`}
-                    type="text"
-                    maxLength="1"
-                    value={digit}
-                    onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    className="w-14 h-14 text-center text-xl font-semibold border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    whileFocus={{ scale: 1.1 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  />
-                ))}
-              </form>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={handleOtpSubmit}
-                className="w-full mt-6 bg-gradient-to-r from-yellow-400 to-yellow-500 text-teal-900 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition"
-              >
-                Verify OTP
-              </motion.button>
-            </motion.div>
-          )}
+        <h2 className="text-3xl font-extrabold text-center text-teal-900 mb-2">
+          Forgot Password 🔐
+        </h2>
+        <p className="text-gray-600 text-center text-sm mb-6">
+          Enter your registered <strong>mobile number</strong>. If we find a
+          matching account with an email address, we'll send a password reset
+          link to that email.
+        </p>
 
-          {/* Step 3: Reset Password */}
-          {step === 3 && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
+        {!submitted ? (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-teal-800 mb-1">
+                Mobile Number
+              </label>
+              <input
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                required
+                placeholder="e.g. +8801XXXXXXXXX"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition bg-white/70"
+              />
+            </div>
+
+            <motion.button
+              whileHover={{ scale: loading ? 1 : 1.03 }}
+              whileTap={{ scale: loading ? 1 : 0.97 }}
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-teal-900 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <h2 className="text-3xl font-extrabold text-center text-teal-900 mb-4">
-                Reset Password 🔁
-              </h2>
-              <p className="text-gray-700 mb-6 text-center">
-                Set your new secure password below.
-              </p>
-              <form onSubmit={handleNewPasswordSubmit} className="space-y-5">
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    required
-                    placeholder="Enter new password"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
-                  />
-                  <div
-                    className="absolute right-3 top-3 cursor-pointer text-gray-600 hover:text-teal-700"
-                    onClick={() => setShowPassword(!showPassword)}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-teal-900"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
                   >
-                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
-                  </div>
-                </div>
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                  Sending Reset Link...
+                </span>
+              ) : (
+                "Send Reset Link"
+              )}
+            </motion.button>
+          </form>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-4 space-y-3"
+          >
+            <div className="text-5xl">📬</div>
+            <p className="text-teal-800 font-semibold text-lg">
+              Check your email!
+            </p>
+            <p className="text-gray-600 text-sm">
+              If a matching account was found, a reset link has been sent to the
+              registered email address.
+            </p>
+          </motion.div>
+        )}
 
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  placeholder="Confirm new password"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition"
-                />
-
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-teal-900 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition"
-                >
-                  Reset Password
-                </motion.button>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Back to Login */}
+        <p className="text-sm text-center mt-6 text-gray-600">
+          Remembered your password?{" "}
+          <Link
+            to="/login"
+            className="text-yellow-600 font-semibold hover:underline"
+          >
+            Back to Login
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
